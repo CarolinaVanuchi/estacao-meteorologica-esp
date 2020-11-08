@@ -1,16 +1,15 @@
-#include <stdio.h>
 #include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_system.h>
 #include <nvs_flash.h>
 #include <sys/param.h>
-#include "nvs_flash.h"
 #include "esp_netif.h"
 #include "esp_eth.h"
-#include <esp_http_server.h>
-#include "cJSON.h"
 #include "protocol_examples_common.h"
+#include "cJSON.h"
+#include <esp_https_server.h>
+
 
 static const char *TAG = "estacao-meteorologica";
 
@@ -62,6 +61,7 @@ static esp_err_t get_temperature(httpd_req_t *req) {
     cJSON_AddNumberToObject(root, "lot", fields[0].lon);
     cJSON_AddStringToObject(root, "city", fields[0].city);
     cJSON_AddStringToObject(root, "state", fields[0].state);
+   
     
     char *buffer = cJSON_Print(root);
 
@@ -78,35 +78,49 @@ static const httpd_uri_t temperature = {
     .uri       = "/api/temperature",
     .method    = HTTP_GET,
     .handler   = get_temperature,
-    .user_ctx  = NULL
 };
 //rain intensity
 //solar_incidence
 
 static httpd_handle_t start_webserver(void) {
     httpd_handle_t server = NULL;
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
-    if (httpd_start(&server, &config) == ESP_OK) {
-      
-        ESP_LOGI(TAG, "Registering URI handlers");
-        httpd_register_uri_handler(server, &temperature);
-        return server;
+    
+    ESP_LOGI(TAG, "Starting server: '%d'", config.server_port));
+
+    httpd_ssl_config_t conf = HTTPD_SSL_CONFIG_DEFAULT();
+
+    extern const unsigned char cacert_pem_start[] asm("_binary_cacert_pem_start");
+    extern const unsigned char cacert_pem_end[]   asm("_binary_cacert_pem_end");
+    conf.cacert_pem = cacert_pem_start;
+    conf.cacert_len = cacert_pem_end - cacert_pem_start;
+
+    extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
+    extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
+    conf.prvtkey_pem = prvtkey_pem_start;
+    conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+
+    esp_err_t ret = httpd_ssl_start(&server, &conf);
+
+     if (ESP_OK != ret) {
+        ESP_LOGI(TAG, "Error starting server!");
+        return NULL;
     }
 
-    ESP_LOGI(TAG, "Error starting server!");
-    return NULL;
+    ESP_LOGI(TAG, "Registering URI handlers");
+    httpd_register_uri_handler(server, &root);
+    return server;
 }
+
 
 static void stop_webserver(httpd_handle_t server) {
-   if (server) httpd_stop(server);
+    httpd_ssl_stop(server);
 }
 
-static void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+
+static void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data){
     httpd_handle_t* server = (httpd_handle_t*) arg;
     if (*server) {
-        ESP_LOGI(TAG, "Stopping webserver");
         stop_webserver(*server);
         *server = NULL;
     }
@@ -115,27 +129,21 @@ static void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t e
 static void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
     httpd_handle_t* server = (httpd_handle_t*) arg;
     if (*server == NULL) {
-        ESP_LOGI(TAG, "Starting webserver");
         *server = start_webserver();
     }
 }
 
 void app_main(void) {
     static httpd_handle_t server = NULL;
-    
+
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_ERROR_CHECK(example_connect());
+    /* Register event handlers to start server when Wi-Fi or Ethernet is connected,
+        * and stop server when disconnection happens.
+        */
 
-    /* Register event handlers to stop the server when Wi-Fi or Ethernet is disconnected,
-     * and re-start it upon connection.
-     */
     #ifdef CONFIG_EXAMPLE_CONNECT_WIFI
         ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
         ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, &server));
@@ -145,5 +153,9 @@ void app_main(void) {
         ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, &disconnect_handler, &server));
     #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
 
-    server = start_webserver();
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+        * Read "Establishing Wi-Fi or Ethernet Connection" section in
+        * examples/protocols/README.md for more information about this function.
+        */
+    ESP_ERROR_CHECK(example_connect());
 }
