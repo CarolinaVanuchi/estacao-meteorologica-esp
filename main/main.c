@@ -7,8 +7,8 @@
 #include "esp_netif.h"
 #include "esp_eth.h"
 #include "protocol_examples_common.h"
-#include "cJSON.h"
 #include <esp_https_server.h>
+#include "model.h"
 
 static const char *TAG = "estacao-meteorologica";
 
@@ -23,58 +23,44 @@ esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err) {
 }
 
 
-static esp_err_t get_temperature(httpd_req_t *req) {
-    // const char resp[] = "GET Temperature";
-    // httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN); 
-   	
-    struct record{
-        const char *precision;
-        double lat;
-        double lon;
-        const char *city;
-        const char *state;      
-    };
-
-    struct record fields[2] = {
+static esp_err_t send_data(httpd_req_t *req) {
+   
+    wheater_station_data_t data[] = {
         {
-            "zip",
-            37.7668,
-            -1.223959e+2,
-            "SAN FRANCISCO",
-            "CA",      
+            .temp_maxima        = 27.8,
+            .temp_minina        = 13.4,
+            .temp_instantanea   = 21.6,
+            .chuva_intensidade  = 20.0,
+            .inc_maxima         = 2.6,
+            .inc_minima         = 3.5,
+            .inc_instantanea    = 1.5
         },
         {
-            "zip",
-            37.371991,
-            -1.22026e+2,
-            "SUNNYVALE",
-            "CA",
+            .temp_maxima        = 37.8,
+            .temp_minina        = 23.4,
+            .temp_instantanea   = 11.6,
+            .chuva_intensidade  = 50.0,
+            .inc_maxima         = 32.26,
+            .inc_minima         = 33.2,
+            .inc_instantanea    = 14.55
         }
     };
-   
-    cJSON *root = cJSON_CreateObject();
-    cJSON_AddStringToObject(root, "precision", fields[0].precision);
-    cJSON_AddNumberToObject(root, "lat", fields[0].lat);
-    cJSON_AddNumberToObject(root, "lot", fields[0].lon);
-    cJSON_AddStringToObject(root, "city", fields[0].city);
-    cJSON_AddStringToObject(root, "state", fields[0].state);
+
     
-    char *buffer = cJSON_Print(root);
+    char *buffer = wheater_station_array_to_json(data, 2);
 
     httpd_resp_sendstr(req, buffer);
 
     free(buffer);
 
-    cJSON_Delete(root);
-
     return ESP_OK;
 }
 
 
-static const httpd_uri_t temperature = {
-    .uri       = "/api/temperature",
+static const httpd_uri_t httpd_uri_wheater_station = {
+    .uri       = "/api/wheater_station",
     .method    = HTTP_GET,
-    .handler   = get_temperature,
+    .handler   = send_data,
 };
 
 
@@ -83,7 +69,7 @@ static httpd_handle_t start_webserver(void){
     httpd_handle_t server = NULL;
 
     httpd_ssl_config_t conf = HTTPD_SSL_CONFIG_DEFAULT();
-
+    conf.port_secure = 3333;
     ESP_LOGI(TAG, "Starting server: '%d'", conf.port_secure);
 
     extern const unsigned char cacert_pem_start[] asm("_binary_ca_cert_pem_start");
@@ -104,7 +90,7 @@ static httpd_handle_t start_webserver(void){
     }
 
     ESP_LOGI(TAG, "Registering URI handlers");
-    httpd_register_uri_handler(server, &temperature);
+    httpd_register_uri_handler(server, &httpd_uri_wheater_station);
     return server;
 }
 
