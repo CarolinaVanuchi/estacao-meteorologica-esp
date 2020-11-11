@@ -1,0 +1,15 @@
+menu "HTTPS Server Login/password"
+
+    config SERVER_USERNAME
+        string "Server Username"
+        default "admin"
+        help
+            Username to loggin.
+
+    config SERVER_PASSWORD
+        string "Server Password"
+        default "admin"
+        help
+            Server password to loggin into server.
+        
+endmenu

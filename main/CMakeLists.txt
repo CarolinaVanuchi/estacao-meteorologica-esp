@@ -1,4 +1,8 @@
 idf_component_register(SRCS "main.c"
                     INCLUDE_DIRS "."  
                     EMBED_TXTFILES "certs/ca_cert.pem"
-                                   "certs/ca_key.pem")
+                                   "certs/ca_key.pem"
+                                   "webview/index.html"
+                                   "webview/assets/js/index.js"
+                                   "webview/assets/css/style.css"
+)
