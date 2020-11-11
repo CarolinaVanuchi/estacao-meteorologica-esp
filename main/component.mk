@@ -9,3 +9,6 @@
 
 COMPONENT_EMBED_TXTFILES := certs/ca_cert.pem
 COMPONENT_EMBED_TXTFILES += certs/ca_key.pem
+COMPONENT_EMBED_TXTFILES += webview/index.html
+COMPONENT_EMBED_TXTFILES += webview/assets/js/index.js
+COMPONENT_EMBED_TXTFILES += webview/assets/css/style.css

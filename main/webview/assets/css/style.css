@@ -1,0 +1,68 @@
+:root {
+    --color_1: rgb(0, 240, 228); 
+    --color_2: rgb(136, 243, 229); 
+    --color_select: rgb(186, 253, 247); 
+    --color_text: rgb(0, 192, 182); 
+    --color_warn: rgb(255, 88, 88); 
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Confortaa",sans-serif;
+    
+}
+
+.login {
+    top: 50%;
+    left: 50%;
+    position: absolute;
+    transform: translate(-50%,-50%);
+    border: 9px solid #000000;
+    border-radius: 80px 0px 80px 0px;
+    padding: 30px 30px;
+    border-color: var(--color_1);
+    color: black;
+    background-color: white;
+}
+
+.login h1 {
+    text-align: center;
+    color: var(--color_text);
+    font-size: 300%;
+}
+
+.login h2 {
+    text-align: left;
+    color: var(--color_warn);
+    font-size: 100%;
+}
+
+.login p {
+    margin: 0;
+    padding: 0;
+}
+
+.login input {
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+.login input[type="text"], input[type="password"] {
+    border: none;
+    border-bottom: 1px solid black;
+    border-radius: 5px;
+}
+
+.login input[type="submit"] {
+    height: 40px;
+    border: none;
+    border-radius: 20px;
+    background: var(--color_2);
+}
+
+.login input[type="submit"]:hover {
+    cursor: pointer;
+    transition: 0.2s;
+    background: var(--color_select);
+}

@@ -1,6 +1,9 @@
 #include "cJSON.h"
 #include <stdint.h>
 
+#ifndef _MODEL_
+#define _MODEL_
+
 typedef struct {
     double temp_maxima;
     double temp_minina;
@@ -11,10 +14,10 @@ typedef struct {
     double inc_maxima;
     double inc_minima;
     double inc_instantanea;
-} wheater_station_data_t;
+} weather_station_data_t;
 
 
-static char * wheater_station_array_to_json(wheater_station_data_t fields[], uint16_t size) {
+static char * weather_station_array_to_json(weather_station_data_t fields[], uint16_t size) {
 
     cJSON *root = cJSON_CreateObject();
 
@@ -36,3 +39,5 @@ static char * wheater_station_array_to_json(wheater_station_data_t fields[], uin
 
     return buffer;
 }
+
+#endif

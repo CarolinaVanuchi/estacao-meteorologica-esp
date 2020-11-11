@@ -9,6 +9,10 @@
 #include "protocol_examples_common.h"
 #include <esp_https_server.h>
 #include "model.h"
+#include "routes.h"
+#include "embbeded_files.h"
+#include "config_symbols.h"
+
 
 static const char *TAG = "estacao-meteorologica";
 
@@ -23,47 +27,6 @@ esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err) {
 }
 
 
-static esp_err_t send_data(httpd_req_t *req) {
-   
-    wheater_station_data_t data[] = {
-        {
-            .temp_maxima        = 27.8,
-            .temp_minina        = 13.4,
-            .temp_instantanea   = 21.6,
-            .chuva_intensidade  = 20.0,
-            .inc_maxima         = 2.6,
-            .inc_minima         = 3.5,
-            .inc_instantanea    = 1.5
-        },
-        {
-            .temp_maxima        = 37.8,
-            .temp_minina        = 23.4,
-            .temp_instantanea   = 11.6,
-            .chuva_intensidade  = 50.0,
-            .inc_maxima         = 32.26,
-            .inc_minima         = 33.2,
-            .inc_instantanea    = 14.55
-        }
-    };
-
-    
-    char *buffer = wheater_station_array_to_json(data, 2);
-
-    httpd_resp_sendstr(req, buffer);
-
-    free(buffer);
-
-    return ESP_OK;
-}
-
-
-static const httpd_uri_t httpd_uri_wheater_station = {
-    .uri       = "/api/wheater_station",
-    .method    = HTTP_GET,
-    .handler   = send_data,
-};
-
-
 static httpd_handle_t start_webserver(void){
 
     httpd_handle_t server = NULL;
@@ -71,14 +34,10 @@ static httpd_handle_t start_webserver(void){
     httpd_ssl_config_t conf = HTTPD_SSL_CONFIG_DEFAULT();
     conf.port_secure = 3333;
     ESP_LOGI(TAG, "Starting server: '%d'", conf.port_secure);
-
-    extern const unsigned char cacert_pem_start[] asm("_binary_ca_cert_pem_start");
-    extern const unsigned char cacert_pem_end[]   asm("_binary_ca_cert_pem_end");
+    
     conf.cacert_pem = cacert_pem_start;
     conf.cacert_len = cacert_pem_end - cacert_pem_start;
 
-    extern const unsigned char prvtkey_pem_start[] asm("_binary_ca_key_pem_start");
-    extern const unsigned char prvtkey_pem_end[]   asm("_binary_ca_key_pem_end");
     conf.prvtkey_pem = prvtkey_pem_start;
     conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
 
@@ -90,7 +49,9 @@ static httpd_handle_t start_webserver(void){
     }
 
     ESP_LOGI(TAG, "Registering URI handlers");
-    httpd_register_uri_handler(server, &httpd_uri_wheater_station);
+
+    httpd_register_uri_routes(server);
+
     return server;
 }
 
