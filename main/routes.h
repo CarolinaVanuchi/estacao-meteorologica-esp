@@ -99,7 +99,7 @@ static esp_err_t httpd_uri_form_handler(httpd_req_t *req){
 
 
     if(!strcmp(SERVER_USERNAME, username_received) && !strcmp(SERVER_PASSWORD, password_received)){ // on error
-        httpd_resp_set_type(req, "text/plain")
+        httpd_resp_set_type(req, "text/plain");
         httpd_resp_send(req,"[ALTERAR] Login feito",22);
         
         ESP_LOGI(TAG_ROUTE, "Login Realizado. User: [%s - %s] / Password: [%s - %s]",SERVER_USERNAME, username_received, SERVER_PASSWORD, password_received);
@@ -107,7 +107,7 @@ static esp_err_t httpd_uri_form_handler(httpd_req_t *req){
         return ESP_OK;
     }
     else{
-        httpd_resp_set_type(req, "text/plain")    
+        httpd_resp_set_type(req, "text/plain");    
         httpd_resp_send(req,"[ALTERAR] Erro de login",24);
         
         ESP_LOGI(TAG_ROUTE, "Login Negado. User: [%s - %s] / Password: [%s - %s]",SERVER_USERNAME, username_received, SERVER_PASSWORD, password_received);
