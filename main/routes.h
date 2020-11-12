@@ -52,6 +52,12 @@ static esp_err_t httpd_uri_login_handler(httpd_req_t *req){
     return ESP_OK;
 }
 
+static esp_err_t httpd_uri_configuration_handler(httpd_req_t *req){
+    httpd_resp_set_type(req,"text/html");
+    httpd_resp_send(req, (const char*)configuration_html_start, configuration_html_end - configuration_html_start - 1);
+    return ESP_OK;
+}
+
 static esp_err_t httpd_uri_assets_css_style_css_handler(httpd_req_t *req){
     httpd_resp_set_type(req,"text/css");
     httpd_resp_send(req, (const char*)style_css_start, style_css_end - style_css_start - 1);
@@ -99,7 +105,7 @@ static esp_err_t httpd_uri_form_handler(httpd_req_t *req){
 
 
     if(!strcmp(SERVER_USERNAME, username_received) && !strcmp(SERVER_PASSWORD, password_received)){ // on error
-        httpd_resp_set_type(req, "text/plain")
+        httpd_resp_set_type(req, "text/plain");
         httpd_resp_send(req,"[ALTERAR] Login feito",22);
         
         ESP_LOGI(TAG_ROUTE, "Login Realizado. User: [%s - %s] / Password: [%s - %s]",SERVER_USERNAME, username_received, SERVER_PASSWORD, password_received);
@@ -107,7 +113,7 @@ static esp_err_t httpd_uri_form_handler(httpd_req_t *req){
         return ESP_OK;
     }
     else{
-        httpd_resp_set_type(req, "text/plain")    
+        httpd_resp_set_type(req, "text/plain");    
         httpd_resp_send(req,"[ALTERAR] Erro de login",24);
         
         ESP_LOGI(TAG_ROUTE, "Login Negado. User: [%s - %s] / Password: [%s - %s]",SERVER_USERNAME, username_received, SERVER_PASSWORD, password_received);
@@ -130,6 +136,12 @@ static const httpd_uri_t httpd_uri_login = {
     .uri        = "/login",
     .method     = HTTP_GET,
     .handler    = httpd_uri_login_handler,
+};
+
+static const httpd_uri_t httpd_uri_configuration = {
+    .uri        = "/configuration",
+    .method     = HTTP_GET,
+    .handler    = httpd_uri_configuration_handler,
 };
 
 static const httpd_uri_t httpd_uri_assets_css_style_css = {
@@ -158,6 +170,7 @@ esp_err_t httpd_register_uri_routes(httpd_handle_t server){
 
     httpd_register_uri_handler(server, &httpd_uri_api_weather_station);
     httpd_register_uri_handler(server, &httpd_uri_login);
+    httpd_register_uri_handler(server, &httpd_uri_configuration);
     httpd_register_uri_handler(server, &httpd_uri_assets_js_index_js);
     httpd_register_uri_handler(server, &httpd_uri_assets_css_style_css);
     httpd_register_uri_handler(server, &httpd_uri_form);
