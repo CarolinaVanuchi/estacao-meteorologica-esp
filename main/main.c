@@ -7,10 +7,10 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <driver/adc.h>
+#include <esp_https_server.h>
 #include "esp_netif.h"
 #include "esp_eth.h"
 #include "protocol_examples_common.h"
-#include <esp_https_server.h>
 #include "model.h"
 #include "routes.h"
 #include "embbeded_files.h"
@@ -107,7 +107,7 @@ void app_main(void) {
         uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
         float temp_voltage = (temp_raw*3.3/4096);
         float temp         = (temp_voltage/10.0);
-        ESP_LOGI(TAG, "Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",temp_raw,temp_voltage,temp);
+        // ESP_LOGI(TAG, "Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",temp_raw,temp_voltage,temp);
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 }

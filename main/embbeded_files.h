@@ -16,6 +16,9 @@ extern const unsigned char configuration_html_end[]         asm("_binary_configu
 extern const unsigned char index_js_start[]                 asm("_binary_index_js_start");
 extern const unsigned char index_js_end[]                   asm("_binary_index_js_end");
 
+extern const unsigned char configuration_js_start[]         asm("_binary_configuration_js_start");
+extern const unsigned char configuration_js_end[]           asm("_binary_configuration_js_end");
+
 extern const unsigned char style_css_start[]                asm("_binary_style_css_start");
 extern const unsigned char style_css_end[]                  asm("_binary_style_css_end");
 
