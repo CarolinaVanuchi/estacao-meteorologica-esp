@@ -13,3 +13,28 @@ menu "HTTPS Server Login/password"
             Server password to loggin into server.
         
 endmenu
+
+menu "Sensors GPIO"
+
+    config GPIO_HALL_SENSOR
+        int "Hall sensor digital input"
+        range 1 39
+        default 23
+        help
+            44E 402 Digitial hall sensor input.
+
+    config GPIO_TEMPERATURE
+        int "LM35 analog input"
+        range 1 39
+        default 36
+        help
+            LM35 Centigrede sensor input.
+
+    config GPIO_HUMIDITY
+        int "AM2302 digital humidity and temperature sensor input"
+        range 1 39
+        default 22
+        help
+            AM2302 digital humidity and temperature sensor input.
+        
+endmenu

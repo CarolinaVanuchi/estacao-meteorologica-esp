@@ -2,6 +2,7 @@
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_system.h>
+#include <gpio.h>
 #include <nvs_flash.h>
 #include <sys/param.h>
 #include <freertos/FreeRTOS.h>
@@ -15,7 +16,7 @@
 #include "routes.h"
 #include "embbeded_files.h"
 #include "config_symbols.h"
-
+#include "one_wire_hg_sensor.h"
 
 static const char *TAG = "estacao-meteorologica";
 
@@ -80,6 +81,12 @@ static void connect_handler(void* arg, esp_event_base_t event_base, int32_t even
     }
 }
 
+volatile int HALL = 0;
+
+static void IRAM_ATTR isr_hall_sensor(void *arg)
+{
+    HALL = 1;
+}
 
 void app_main(void) {
     
@@ -100,14 +107,29 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(example_connect());
 
+    gpio_config_t adc0_gpio = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_TEMPERATURE) };
+    gpio_config_t hall_gpio = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_HALL_SENSOR) };
+    gpio_config_t hg_gpio   = { .intr_type = GPIO_INTR_DISABLE, .mode = GPIO_MODE_INPUT_OUTPUT_OD, .pin_bit_mask = (1ULL<<GPIO_HUMIDITY) };
+    gpio_config(&adc0_gpio);
+    gpio_config(&hall_gpio);
+    gpio_config(&hg_gpio);
+
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_11);
+
+    gpio_install_isr_service(0);
+
+    // gpio_isr_handler_add(GPIO_HALL_SENSOR, isr_hall_sensor, (void*) GPIO_HALL_SENSOR);
 
     while(1){
         uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
         float temp_voltage = (temp_raw*3.3/4096);
-        float temp         = (temp_voltage/10.0);
-        // ESP_LOGI(TAG, "Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",temp_raw,temp_voltage,temp);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        float temp         = (temp_voltage*100.0);
+
+        ESP_LOGI(TAG, "Valor Hall: %i - Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",gpio_get_level(GPIO_HALL_SENSOR),temp_raw,temp_voltage,temp);
+
+        hg_info_t = hg_read(GPIO_HUMIDITY);
+
+        vTaskDelay(20 / portTICK_PERIOD_MS);
     }
 }
