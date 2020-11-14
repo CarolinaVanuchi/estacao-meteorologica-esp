@@ -8,7 +8,11 @@ const configuration_route = "/configuration"
 
 function login_callback(){
     console.log(`ResponseType: ${this.responseType}. Response : ${this.responseText}. Http code: ${this.status}`);
-    window.location.href = configuration_route;
+    if (this.status == "403") {
+        error_msg.innerText = "Username or password is incorrect";
+    } else if (this.status == "200") {
+        window.location.href = configuration_route;
+    }
 } 
 
 form.addEventListener("submit", (e) => {

@@ -109,4 +109,18 @@ body {
 }
 }
 
+.btn {
+    margin: 15px;
+    height: 40px;
+    width: 200px;
+    border: none;
+    border-radius: 20px;
+    background: var(--color_2);
+}
+
+.btn:hover {
+    cursor: pointer;
+    transition: 0.2s;
+    background: var(--color_select);
+}
 /* Tela de Configuração */
