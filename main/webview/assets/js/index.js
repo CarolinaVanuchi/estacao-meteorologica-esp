@@ -4,6 +4,12 @@ const password = document.getElementById("password");
 const form = document.getElementById("form");
 
 const credentials_route = "/form"
+const configuration_route = "/configuration"
+
+function login_callback(){
+    console.log(`ResponseType: ${this.responseType}. Response : ${this.responseText}. Http code: ${this.status}`);
+    window.location.href = configuration_route;
+} 
 
 form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -20,14 +26,16 @@ form.addEventListener("submit", (e) => {
         error_msg.innerText = msg.join(", ");
     }else{
         error_msg.innerText = "";
-
+        
         const response = new XMLHttpRequest();
-        response.open("post",credentials_route);
+        response.addEventListener("load", login_callback);
+        response.open("post",credentials_route); // false to sync execution
         
         const json = { username: username.value, password: password.value };
-
-        response.responseType = "json";
+        
+        response.responseType = "text";
         response.send(JSON.stringify(json));
     }
 });
+
 

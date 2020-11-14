@@ -4,26 +4,28 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" type="text/css" href="assets/css/style.css">
         <meta charset="UTF-8">
+        <title>ESP32 Upload firmware</title>
+        <script defer src="./assets/js/configuration.js"></script>
     </head>
 
-    <body>
+    <body id="dropbox">
         <div class="topnav">
             <a class="active" href="#home">Home</a>
             <a href="#news">News</a>
         
         </div>
         
-          <div class="container">
+        <div class="container">
             <div class="panel">
-                <h2>Configuração da Estação Meteorologica</h2>
-                <p>Informações..</p>
+                <h2>Upload de firmware via OTA https</h2>
 
-                <input id="id" type="text" placeholder="Id">
-                <p>Informações..</p>
+                <p>Insira ou arraste o firmware (*.bin):</p>
 
-                <input type="file" id="myfile" name="myfile">
+                <input type="file" id="firmware" name="myfile" accept=".bin">
+                <input type="button" id="enviar" value="Enviar">
                 
             </div>
-          </div>
+        </div>
+
     </body>
 </html>

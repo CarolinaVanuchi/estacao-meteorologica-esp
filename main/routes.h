@@ -70,6 +70,12 @@ static esp_err_t httpd_uri_assets_js_index_js_handler(httpd_req_t *req){
     return ESP_OK;
 }
 
+static esp_err_t httpd_uri_assets_js_configuration_js_handler(httpd_req_t *req){
+    httpd_resp_set_type(req,"text/javascript");
+    httpd_resp_send(req, (const char*)configuration_js_start, configuration_js_end - configuration_js_start - 1);
+    return ESP_OK;
+}
+
 static esp_err_t httpd_uri_form_handler(httpd_req_t *req){
     ESP_LOGI(TAG_ROUTE,"[DEBUG] Receive POST");
 
@@ -105,14 +111,17 @@ static esp_err_t httpd_uri_form_handler(httpd_req_t *req){
 
 
     if(!strcmp(SERVER_USERNAME, username_received) && !strcmp(SERVER_PASSWORD, password_received)){ // on error
+        httpd_resp_set_status(req, "200");
         httpd_resp_set_type(req, "text/plain");
         httpd_resp_send(req,"[ALTERAR] Login feito",22);
         
         ESP_LOGI(TAG_ROUTE, "Login Realizado. User: [%s - %s] / Password: [%s - %s]",SERVER_USERNAME, username_received, SERVER_PASSWORD, password_received);
         cJSON_Delete(credentials_received);
+
         return ESP_OK;
     }
     else{
+        httpd_resp_set_status(req, "403");
         httpd_resp_set_type(req, "text/plain");    
         httpd_resp_send(req,"[ALTERAR] Erro de login",24);
         
@@ -156,6 +165,12 @@ static const httpd_uri_t httpd_uri_assets_js_index_js = {
     .handler    = httpd_uri_assets_js_index_js_handler,
 };
 
+static const httpd_uri_t httpd_uri_assets_js_configuration_js = {
+    .uri        = "/assets/js/configuration.js",
+    .method     = HTTP_GET,
+    .handler    = httpd_uri_assets_js_configuration_js_handler,
+};
+
 static const httpd_uri_t httpd_uri_form = {
     .uri        = "/form",
     .method     = HTTP_POST,
@@ -172,6 +187,7 @@ esp_err_t httpd_register_uri_routes(httpd_handle_t server){
     httpd_register_uri_handler(server, &httpd_uri_login);
     httpd_register_uri_handler(server, &httpd_uri_configuration);
     httpd_register_uri_handler(server, &httpd_uri_assets_js_index_js);
+    httpd_register_uri_handler(server, &httpd_uri_assets_js_configuration_js);
     httpd_register_uri_handler(server, &httpd_uri_assets_css_style_css);
     httpd_register_uri_handler(server, &httpd_uri_form);
 
