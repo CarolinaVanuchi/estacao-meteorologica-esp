@@ -4,13 +4,13 @@ menu "HTTPS Server Login/password"
         string "Server Username"
         default "admin"
         help
-            Username to loggin.
+            Username to login.
 
     config SERVER_PASSWORD
         string "Server Password"
         default "admin"
         help
-            Server password to loggin into server.
+            Server password to login into server.
         
 endmenu
 
@@ -36,5 +36,12 @@ menu "Sensors GPIO"
         default 22
         help
             AM2302 digital humidity and temperature sensor input.
+
+    config GPIO_SOLAR_INCIDENCE
+        int "Photovoltaic plate"
+        range 1 39
+        default 21
+        help
+            Photovoltaic plate sensor input.
         
 endmenu

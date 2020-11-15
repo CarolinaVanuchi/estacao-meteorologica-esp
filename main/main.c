@@ -2,89 +2,23 @@
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_system.h>
-#include <gpio.h>
 #include <nvs_flash.h>
 #include <sys/param.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <driver/adc.h>
-#include <esp_https_server.h>
 #include "esp_netif.h"
 #include "esp_eth.h"
 #include "protocol_examples_common.h"
 #include "model.h"
 #include "routes.h"
 #include "embbeded_files.h"
-#include "config_symbols.h"
 #include "one_wire_hg_sensor.h"
-
-static const char *TAG = "estacao-meteorologica";
-
-
-esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err) {
-    if(strcmp("/api/temperature", req->uri) == 0) {
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "URI is not available");
-        return ESP_OK;
-    }
-    httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "ERROR 404");
-    return ESP_FAIL;
-}
-
-
-static httpd_handle_t start_webserver(void){
-
-    httpd_handle_t server = NULL;
-
-    httpd_ssl_config_t conf = HTTPD_SSL_CONFIG_DEFAULT();
-    conf.port_secure = 3333;
-    ESP_LOGI(TAG, "Starting server: '%d'", conf.port_secure);
-    
-    conf.cacert_pem = cacert_pem_start;
-    conf.cacert_len = cacert_pem_end - cacert_pem_start;
-
-    conf.prvtkey_pem = prvtkey_pem_start;
-    conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
-
-    esp_err_t ret = httpd_ssl_start(&server, &conf);
-
-     if (ESP_OK != ret) {
-        ESP_LOGI(TAG, "Error starting server!");
-        return NULL;
-    }
-
-    ESP_LOGI(TAG, "Registering URI handlers");
-
-    httpd_register_uri_routes(server);
-
-    return server;
-}
-
-
-static void stop_webserver(httpd_handle_t server) {
-    httpd_ssl_stop(server);
-}
-
-
-static void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data){
-    httpd_handle_t* server = (httpd_handle_t*) arg;
-    if (*server) {
-        stop_webserver(*server);
-        *server = NULL;
-    }
-}
-
-
-static void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
-    httpd_handle_t* server = (httpd_handle_t*) arg;
-    if (*server == NULL) {
-        *server = start_webserver();
-    }
-}
+#include "utils_https.h"
 
 volatile int HALL = 0;
 
-static void IRAM_ATTR isr_hall_sensor(void *arg)
-{
+static void IRAM_ATTR isr_hall_sensor(void *arg) {
     HALL = 1;
 }
 
@@ -107,9 +41,9 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(example_connect());
 
-    gpio_config_t adc0_gpio = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_TEMPERATURE) };
-    gpio_config_t hall_gpio = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_HALL_SENSOR) };
-    gpio_config_t hg_gpio   = { .intr_type = GPIO_INTR_DISABLE, .mode = GPIO_MODE_INPUT_OUTPUT_OD, .pin_bit_mask = (1ULL<<GPIO_HUMIDITY) };
+    gpio_config_t adc0_gpio = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<CONFIG_GPIO_TEMPERATURE) };
+    gpio_config_t hall_gpio = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<CONFIG_GPIO_HALL_SENSOR) };
+    gpio_config_t hg_gpio   = { .intr_type = GPIO_INTR_DISABLE, .mode = GPIO_MODE_INPUT_OUTPUT_OD, .pin_bit_mask = (1ULL<<CONFIG_GPIO_HUMIDITY) };
     gpio_config(&adc0_gpio);
     gpio_config(&hall_gpio);
     gpio_config(&hg_gpio);
@@ -119,16 +53,20 @@ void app_main(void) {
 
     gpio_install_isr_service(0);
 
-    // gpio_isr_handler_add(GPIO_HALL_SENSOR, isr_hall_sensor, (void*) GPIO_HALL_SENSOR);
+    weather_station_data_t data;
+    set_weather_station(&data);
+    data.temp_maxima = 38.0;
+
+    // gpio_isr_handler_add(CONFIG_GPIO_HALL_SENSOR, isr_hall_sensor, (void*) CONFIG_GPIO_HALL_SENSOR);
 
     while(1){
         uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
         float temp_voltage = (temp_raw*3.3/4096);
         float temp         = (temp_voltage*100.0);
 
-        ESP_LOGI(TAG, "Valor Hall: %i - Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",gpio_get_level(GPIO_HALL_SENSOR),temp_raw,temp_voltage,temp);
+        ESP_LOGI(TAG, "Valor Hall: %i - Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",gpio_get_level(CONFIG_GPIO_HALL_SENSOR),temp_raw,temp_voltage,temp);
 
-        hg_info_t = hg_read(GPIO_HUMIDITY);
+        //hg_info_t data = hg_read(CONFIG_GPIO_HUMIDITY);
 
         vTaskDelay(20 / portTICK_PERIOD_MS);
     }

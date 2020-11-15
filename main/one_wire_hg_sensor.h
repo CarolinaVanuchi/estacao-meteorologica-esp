@@ -7,12 +7,10 @@
 #include <sys/param.h>
 #include <esp_event.h>
 #include <esp_log.h>
-#include <gpio.h>
-#include "config_symbols.h"
 
 volatile uint16_t timer_1us = 0;
 
-static void IRAM_ATTR isr_hall_sensor(void *arg){
+static void IRAM_ATTR isr_timer_1_us(void *arg){
     timer_1us += 1;
 }
 
@@ -22,21 +20,21 @@ typedef struct{
     uint8_t CRC32;
 } hg_info_t;
 
-hg_info_t hg_read(gpio_num_t port){
-    gpio_isr_handler_add(port, isr_hall_sensor, (void*)port);
+// hg_info_t hg_read(gpio_num_t port){
+//     gpio_isr_handler_add(port, isr_timer_1_us, (void*)port);
 
-    timer_1us = 0;
-    gpio_set_level(port,0);
-    while(timer_1us < 1000){}
-    timer_1us = 0;
-    gpio_set_level(port,1);
-    while(timer_1us < 40){}
-    timer_1us = 0;
-    while(timer_1us < 2*80){}
-    timer_1us = 0;
+//     timer_1us = 0;
+//     gpio_set_level(port,0);
+//     while(timer_1us < 1000){}
+//     timer_1us = 0;
+//     gpio_set_level(port,1);
+//     while(timer_1us < 40){}
+//     timer_1us = 0;
+//     while(timer_1us < 2*80){}
+//     timer_1us = 0;
     
     
-    //
-}
+//     //
+// }
 
 #endif

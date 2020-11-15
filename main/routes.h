@@ -5,44 +5,16 @@
 #include "model.h"
 #include <cJSON.h>
 #include "embbeded_files.h"
-#include "config_symbols.h"
 
 const char *TAG_ROUTE = "routes.h"; 
 
-
 /* -------------------- Handlers ------------------------*/
 
-
 static esp_err_t httpd_uri_api_weather_station_handler(httpd_req_t *req) {
-   
-    weather_station_data_t data[] = {
-        {
-            .temp_maxima        = 27.8,
-            .temp_minina        = 13.4,
-            .temp_instantanea   = 21.6,
-            .chuva_intensidade  = 20.0,
-            .inc_maxima         = 2.6,
-            .inc_minima         = 3.5,
-            .inc_instantanea    = 1.5
-        },
-        {
-            .temp_maxima        = 37.8,
-            .temp_minina        = 23.4,
-            .temp_instantanea   = 11.6,
-            .chuva_intensidade  = 50.0,
-            .inc_maxima         = 32.26,
-            .inc_minima         = 33.2,
-            .inc_instantanea    = 14.55
-        }
-    };
-
-    
-    char *buffer = weather_station_array_to_json(data, 2);
-
+    weather_station_data_t temp = get_weather_station();
+    char *buffer = weather_station_to_json(temp);
     httpd_resp_sendstr(req, buffer);
-
     free(buffer);
-
     return ESP_OK;
 }
 
@@ -110,12 +82,12 @@ static esp_err_t httpd_uri_form_handler(httpd_req_t *req){
     char *password_received = cJSON_GetStringValue(password_received_json);
 
 
-    if(!strcmp(SERVER_USERNAME, username_received) && !strcmp(SERVER_PASSWORD, password_received)){ // on error
+    if(!strcmp(CONFIG_SERVER_USERNAME, username_received) && !strcmp(CONFIG_SERVER_PASSWORD, password_received)){ // on error
         httpd_resp_set_status(req, "200");
         httpd_resp_set_type(req, "text/plain");
         httpd_resp_send(req,"[ALTERAR] Login feito",22);
         
-        ESP_LOGI(TAG_ROUTE, "Login Realizado. User: [%s - %s] / Password: [%s - %s]",SERVER_USERNAME, username_received, SERVER_PASSWORD, password_received);
+        ESP_LOGI(TAG_ROUTE, "Login Realizado. User: [%s - %s] / Password: [%s - %s]",CONFIG_SERVER_USERNAME, username_received, CONFIG_SERVER_PASSWORD, password_received);
         cJSON_Delete(credentials_received);
 
         return ESP_OK;
@@ -125,7 +97,7 @@ static esp_err_t httpd_uri_form_handler(httpd_req_t *req){
         httpd_resp_set_type(req, "text/plain");    
         httpd_resp_send(req,"[ALTERAR] Erro de login",24);
         
-        ESP_LOGI(TAG_ROUTE, "Login Negado. User: [%s - %s] / Password: [%s - %s]",SERVER_USERNAME, username_received, SERVER_PASSWORD, password_received);
+        ESP_LOGI(TAG_ROUTE, "Login Negado. User: [%s - %s] / Password: [%s - %s]",CONFIG_SERVER_USERNAME, username_received, CONFIG_SERVER_PASSWORD, password_received);
         cJSON_Delete(credentials_received);
         return ESP_FAIL;
     }
