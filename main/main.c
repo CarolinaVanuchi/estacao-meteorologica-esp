@@ -2,7 +2,6 @@
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_system.h>
-#include <gpio.h>
 #include <nvs_flash.h>
 #include <sys/param.h>
 #include <freertos/FreeRTOS.h>
@@ -20,7 +19,6 @@
 
 static const char *TAG = "estacao-meteorologica";
 
-
 esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err) {
     if(strcmp("/api/temperature", req->uri) == 0) {
         httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "URI is not available");
@@ -29,7 +27,6 @@ esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err) {
     httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "ERROR 404");
     return ESP_FAIL;
 }
-
 
 static httpd_handle_t start_webserver(void){
 
@@ -122,14 +119,15 @@ void app_main(void) {
     // gpio_isr_handler_add(GPIO_HALL_SENSOR, isr_hall_sensor, (void*) GPIO_HALL_SENSOR);
 
     while(1){
+
         uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
         float temp_voltage = (temp_raw*3.3/4096);
         float temp         = (temp_voltage*100.0);
+        
+        hg_info_t humidity_info = hg_read(GPIO_HUMIDITY);
 
-        ESP_LOGI(TAG, "Valor Hall: %i - Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",gpio_get_level(GPIO_HALL_SENSOR),temp_raw,temp_voltage,temp);
+        ESP_LOGI(TAG, "Hall: [%i] - Temperatura: [%f] - Humidade HG: [%f] - Temperatura HG: [%f]", gpio_get_level(GPIO_HALL_SENSOR), temp, humidity_info.humidity/10.0, humidity_info.temperature/10.0);
 
-        hg_info_t = hg_read(GPIO_HUMIDITY);
-
-        vTaskDelay(20 / portTICK_PERIOD_MS);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 }
