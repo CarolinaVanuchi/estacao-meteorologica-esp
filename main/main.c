@@ -60,7 +60,7 @@ void app_main(void) {
     // gpio_isr_handler_add(CONFIG_GPIO_HALL_SENSOR, isr_hall_sensor, (void*) CONFIG_GPIO_HALL_SENSOR);
 
     while(1){
-        uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
+        uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0); // igor 
         float temp_voltage = (temp_raw*3.3/4096);
         float temp         = (temp_voltage*100.0);
 
