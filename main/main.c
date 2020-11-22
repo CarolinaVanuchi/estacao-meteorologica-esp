@@ -104,19 +104,19 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(example_connect());
 
-    gpio_config_t adc0_gpio = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_TEMPERATURE) };
-    gpio_config_t hall_gpio = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_HALL_SENSOR) };
-    gpio_config_t hg_gpio   = { .intr_type = GPIO_INTR_DISABLE, .mode = GPIO_MODE_INPUT_OUTPUT_OD, .pin_bit_mask = (1ULL<<GPIO_HUMIDITY) };
+    gpio_config_t adc0_gpio         = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_TEMPERATURE) };
+    gpio_config_t hall_gpio         = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_HALL_SENSOR) };
+    gpio_config_t hg_gpio           = { .intr_type = GPIO_INTR_ANYEDGE, .mode = GPIO_MODE_INPUT_OUTPUT_OD, .pin_bit_mask = (1ULL<<GPIO_HUMIDITY) };
+    gpio_config_t led_onboard_gpio  = { .intr_type = GPIO_INTR_DISABLE, .mode = GPIO_MODE_OUTPUT, .pin_bit_mask = (1ULL<<2) };
     gpio_config(&adc0_gpio);
     gpio_config(&hall_gpio);
     gpio_config(&hg_gpio);
+    gpio_config(&led_onboard_gpio);
 
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_11);
 
     gpio_install_isr_service(0);
-
-    // gpio_isr_handler_add(GPIO_HALL_SENSOR, isr_hall_sensor, (void*) GPIO_HALL_SENSOR);
 
     while(1){
 
@@ -124,9 +124,9 @@ void app_main(void) {
         float temp_voltage = (temp_raw*3.3/4096);
         float temp         = (temp_voltage*100.0);
         
-        hg_info_t humidity_info = hg_read(GPIO_HUMIDITY);
+        hg_sensor_t humidity_info = hg_read(GPIO_HUMIDITY);
 
-        ESP_LOGI(TAG, "Hall: [%i] - Temperatura: [%f] - Humidade HG: [%f] - Temperatura HG: [%f]", gpio_get_level(GPIO_HALL_SENSOR), temp, humidity_info.humidity/10.0, humidity_info.temperature/10.0);
+        ESP_LOGI(TAG, "Hall: [%i] - Temperatura: [%f] - Humidade HG: [%f] - Temperatura HG: [%f]", gpio_get_level(GPIO_HALL_SENSOR), temp, humidity_info.humidity, humidity_info.temperature);
 
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
