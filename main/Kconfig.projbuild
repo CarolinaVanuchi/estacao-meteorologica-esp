@@ -45,3 +45,17 @@ menu "Sensors GPIO"
             Photovoltaic plate sensor input.
         
 endmenu
+
+menu "Conexao Wifi"
+    config WIFI_SSID
+        string "Wifi SSID"
+        default "galito"
+        help
+            Wifi ssid to connect.
+
+    config WIFI_PASSWORD
+        string "Wifi Password"
+        default "132128ccj"
+        help
+            Wifi password to connect.
+endmenu

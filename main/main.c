@@ -9,13 +9,12 @@
 #include <driver/adc.h>
 #include "esp_netif.h"
 #include "esp_eth.h"
-#include "protocol_examples_common.h"
 #include "model.h"
 #include "routes.h"
 #include "embbeded_files.h"
 #include "one_wire_hg_sensor.h"
 #include "utils_https.h"
-
+#include "utils_connect.h"
 volatile int HALL = 0;
 
 static void IRAM_ATTR isr_hall_sensor(void *arg) {
@@ -30,16 +29,10 @@ void app_main(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    #ifdef CONFIG_EXAMPLE_CONNECT_WIFI
-        ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
-        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, &server));
-    #endif // CONFIG_EXAMPLE_CONNECT_WIFI
-    #ifdef CONFIG_EXAMPLE_CONNECT_ETHERNET
-        ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &connect_handler, &server));
-        ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, &disconnect_handler, &server));
-    #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, &server));
 
-    ESP_ERROR_CHECK(example_connect());
+    ESP_ERROR_CHECK(connect_wifi_connect());
 
     gpio_config_t adc0_gpio = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<CONFIG_GPIO_TEMPERATURE) };
     gpio_config_t hall_gpio = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<CONFIG_GPIO_HALL_SENSOR) };
@@ -59,15 +52,15 @@ void app_main(void) {
 
     // gpio_isr_handler_add(CONFIG_GPIO_HALL_SENSOR, isr_hall_sensor, (void*) CONFIG_GPIO_HALL_SENSOR);
 
-    while(1){
-        uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
-        float temp_voltage = (temp_raw*3.3/4096);
-        float temp         = (temp_voltage*100.0);
+    // while(1){
+    //     uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
+    //     float temp_voltage = (temp_raw*3.3/4096);
+    //     float temp         = (temp_voltage*100.0);
 
-        ESP_LOGI(TAG, "Valor Hall: %i - Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",gpio_get_level(CONFIG_GPIO_HALL_SENSOR),temp_raw,temp_voltage,temp);
+    //     ESP_LOGI(TAG, "Valor Hall: %i - Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",gpio_get_level(CONFIG_GPIO_HALL_SENSOR),temp_raw,temp_voltage,temp);
 
-        //hg_info_t data = hg_read(CONFIG_GPIO_HUMIDITY);
+    //     //hg_info_t data = hg_read(CONFIG_GPIO_HUMIDITY);
 
-        vTaskDelay(20 / portTICK_PERIOD_MS);
-    }
+    //     vTaskDelay(20 / portTICK_PERIOD_MS);
+    // }
 }

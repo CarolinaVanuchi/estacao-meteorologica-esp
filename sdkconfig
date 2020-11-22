@@ -138,14 +138,11 @@ CONFIG_GPIO_SOLAR_INCIDENCE=21
 # end of Sensors GPIO
 
 #
-# Example Connection Configuration
+# Conexao Wifi
 #
-CONFIG_EXAMPLE_CONNECT_WIFI=y
-CONFIG_EXAMPLE_WIFI_SSID="galito"
-CONFIG_EXAMPLE_WIFI_PASSWORD="132128ccj"
-# CONFIG_EXAMPLE_CONNECT_ETHERNET is not set
-# CONFIG_EXAMPLE_CONNECT_IPV6 is not set
-# end of Example Connection Configuration
+CONFIG_WIFI_SSID="galito"
+CONFIG_WIFI_PASSWORD="132128ccj"
+# end of Conexao Wifi
 
 #
 # Compiler options
