@@ -15,6 +15,7 @@
 #include "one_wire_hg_sensor.h"
 #include "utils_https.h"
 #include "utils_connect.h"
+
 volatile int HALL = 0;
 
 static void IRAM_ATTR isr_hall_sensor(void *arg) {
@@ -34,9 +35,9 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(connect_wifi_connect());
 
-    gpio_config_t adc0_gpio = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<CONFIG_GPIO_TEMPERATURE) };
-    gpio_config_t hall_gpio = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<CONFIG_GPIO_HALL_SENSOR) };
-    gpio_config_t hg_gpio   = { .intr_type = GPIO_INTR_DISABLE, .mode = GPIO_MODE_INPUT_OUTPUT_OD, .pin_bit_mask = (1ULL<<CONFIG_GPIO_HUMIDITY) };
+    gpio_config_t adc0_gpio         = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_TEMPERATURE) };
+    gpio_config_t hall_gpio         = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_HALL_SENSOR) };
+    gpio_config_t hg_gpio           = { .intr_type = GPIO_INTR_ANYEDGE, .mode = GPIO_MODE_INPUT_OUTPUT_OD, .pin_bit_mask = (1ULL<<GPIO_HUMIDITY) };
     gpio_config(&adc0_gpio);
     gpio_config(&hall_gpio);
     gpio_config(&hg_gpio);
@@ -46,28 +47,16 @@ void app_main(void) {
 
     gpio_install_isr_service(0);
 
-    weather_station_data_t data;
-    set_weather_station(&data);
-    data.temp_maxima = 38.0;
-
-    // gpio_isr_handler_add(CONFIG_GPIO_HALL_SENSOR, isr_hall_sensor, (void*) CONFIG_GPIO_HALL_SENSOR);
-
-<<<<<<< HEAD
-    // while(1){
-    //     uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
-    //     float temp_voltage = (temp_raw*3.3/4096);
-    //     float temp         = (temp_voltage*100.0);
-=======
     while(1){
-        uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0); // igor 
+
+        uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
         float temp_voltage = (temp_raw*3.3/4096);
         float temp         = (temp_voltage*100.0);
->>>>>>> 72b5180545d9f43eb15ad1253e7c86d402a98ef9
+        
+        hg_sensor_t humidity_info = hg_read(GPIO_HUMIDITY);
 
-    //     ESP_LOGI(TAG, "Valor Hall: %i - Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",gpio_get_level(CONFIG_GPIO_HALL_SENSOR),temp_raw,temp_voltage,temp);
+        ESP_LOGI(TAG, "Hall: [%i] - Temperatura: [%f] - Humidade HG: [%f] - Temperatura HG: [%f]", gpio_get_level(GPIO_HALL_SENSOR), temp, humidity_info.humidity, humidity_info.temperature);
 
-    //     //hg_info_t data = hg_read(CONFIG_GPIO_HUMIDITY);
-
-    //     vTaskDelay(20 / portTICK_PERIOD_MS);
-    // }
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    }
 }
