@@ -52,10 +52,17 @@ void app_main(void) {
 
     // gpio_isr_handler_add(CONFIG_GPIO_HALL_SENSOR, isr_hall_sensor, (void*) CONFIG_GPIO_HALL_SENSOR);
 
+<<<<<<< HEAD
     // while(1){
     //     uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
     //     float temp_voltage = (temp_raw*3.3/4096);
     //     float temp         = (temp_voltage*100.0);
+=======
+    while(1){
+        uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0); // igor 
+        float temp_voltage = (temp_raw*3.3/4096);
+        float temp         = (temp_voltage*100.0);
+>>>>>>> 72b5180545d9f43eb15ad1253e7c86d402a98ef9
 
     //     ESP_LOGI(TAG, "Valor Hall: %i - Valor ADC: %i - Valor tensão: %f - Valor temperatura: %f",gpio_get_level(CONFIG_GPIO_HALL_SENSOR),temp_raw,temp_voltage,temp);
 
