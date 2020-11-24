@@ -35,9 +35,9 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(connect_wifi_connect());
 
-    gpio_config_t adc0_gpio         = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_TEMPERATURE) };
-    gpio_config_t hall_gpio         = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<GPIO_HALL_SENSOR) };
-    gpio_config_t hg_gpio           = { .intr_type = GPIO_INTR_ANYEDGE, .mode = GPIO_MODE_INPUT_OUTPUT_OD, .pin_bit_mask = (1ULL<<GPIO_HUMIDITY) };
+    gpio_config_t adc0_gpio         = { .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<CONFIG_GPIO_TEMPERATURE) };
+    gpio_config_t hall_gpio         = { .intr_type = GPIO_INTR_NEGEDGE, .mode = GPIO_MODE_INPUT, .pin_bit_mask = (1ULL<<CONFIG_GPIO_HALL_SENSOR) };
+    gpio_config_t hg_gpio           = { .intr_type = GPIO_INTR_ANYEDGE, .mode = GPIO_MODE_INPUT_OUTPUT_OD, .pin_bit_mask = (1ULL<<CONFIG_GPIO_HUMIDITY) };
     gpio_config(&adc0_gpio);
     gpio_config(&hall_gpio);
     gpio_config(&hg_gpio);
@@ -53,9 +53,9 @@ void app_main(void) {
         float temp_voltage = (temp_raw*3.3/4096);
         float temp         = (temp_voltage*100.0);
         
-        hg_sensor_t humidity_info = hg_read(GPIO_HUMIDITY);
+        hg_sensor_t humidity_info = hg_read(CONFIG_GPIO_HUMIDITY);
 
-        ESP_LOGI(TAG, "Hall: [%i] - Temperatura: [%f] - Humidade HG: [%f] - Temperatura HG: [%f]", gpio_get_level(GPIO_HALL_SENSOR), temp, humidity_info.humidity, humidity_info.temperature);
+        ESP_LOGI(TAG, "Hall: [%i] - Temperatura: [%f] - Humidade HG: [%f] - Temperatura HG: [%f]", gpio_get_level(CONFIG_GPIO_HALL_SENSOR), temp, humidity_info.humidity, humidity_info.temperature);
 
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }

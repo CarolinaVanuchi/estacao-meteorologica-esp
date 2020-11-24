@@ -124,7 +124,6 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
-
 # HTTPS Server Login/password
 #
 CONFIG_SERVER_USERNAME="admin"
@@ -141,7 +140,13 @@ CONFIG_GPIO_SOLAR_INCIDENCE=21
 # end of Sensors GPIO
 
 #
+# Conexao Wifi
+#
+CONFIG_WIFI_SSID="galito"
+CONFIG_WIFI_PASSWORD="132128ccj"
+# end of Conexao Wifi
 
+#
 # Compiler options
 #
 CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y
