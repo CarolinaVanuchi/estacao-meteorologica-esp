@@ -40,7 +40,7 @@ menu "Sensors GPIO"
     config GPIO_SOLAR_INCIDENCE
         int "Photovoltaic plate"
         range 1 39
-        default 21
+        default 35
         help
             Photovoltaic plate sensor input.
         
