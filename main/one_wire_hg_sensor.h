@@ -11,25 +11,24 @@
 #include <driver/periph_ctrl.h>
 #include <driver/timer.h>
 #include <soc/gpio_struct.h>
+#include <esp_err.h>
 
 /* --------------------------------------------------------- */
 
 #define PACKET_BYTES_QTY 5 
 
 #pragma pack(push,1)
+typedef union{
 
-    typedef union{
+    struct{
+        uint8_t checksum;
+        uint16_t temperature;
+        uint16_t humidity;
+    };
+    
+    uint8_t byte[PACKET_BYTES_QTY];
 
-        struct{
-            uint8_t checksum;
-            uint16_t temperature;
-            uint16_t humidity;
-        };
-        
-        uint8_t byte[PACKET_BYTES_QTY];
-
-    } hg_packet_t;
-
+} hg_packet_t;
 #pragma pack(pop)
 
 
@@ -39,20 +38,59 @@ typedef struct{
     float temperature;
 } hg_sensor_t;
 
-/* --------------------------------------------------------- */
-
-volatile int64_t micro_s = 0;
-volatile hg_sensor_t sensor_data;
-volatile uint8_t pos_edge_gpio_humidity;
-volatile int64_t temp[PACKET_BYTES_QTY*8*2 + 2];
-volatile int i;
 
 /* --------------------------------------------------------- */
 
-hg_sensor_t hg_read(gpio_num_t port){
+// enumerator with errors
+typedef enum{
+    ESP_ERR_HG_TIMEOUT          =  -1, 
+    ESP_ERR_HG_POINTER_TO_NULL  =  -2, 
+    ESP_ERR_HG_OK               =   0, 
+    ESP_ERR_HG_CHECKSUM_FAILED  =   1, 
+}ESP_ERR_HG_t; 
+
+// macro for building a struct with value 'err' and also name "err"
+#define ERR_TO_STRUCT_HG(err)  {err, #err} 
+
+// struct for code and messages
+typedef struct{
+    int8_t code;
+    const char *msg;
+}esp_err_msg_custom_main_component_t;
+
+// table for error messages
+static const esp_err_msg_custom_main_component_t esp_err_msg_hg_table[] = {
+    ERR_TO_STRUCT_HG(ESP_ERR_HG_TIMEOUT),
+    ERR_TO_STRUCT_HG(ESP_ERR_HG_POINTER_TO_NULL),
+    ERR_TO_STRUCT_HG(ESP_ERR_HG_OK),
+    ERR_TO_STRUCT_HG(ESP_ERR_HG_CHECKSUM_FAILED)
+};
+
+const char *esp_err_hg_to_name(int8_t code){
+    size_t esp_err_msg_hg_table_size = sizeof(esp_err_msg_hg_table)/sizeof(esp_err_msg_hg_table[0]);
+
+    for(int i = 0; i < esp_err_msg_hg_table_size; i++){
+        if(esp_err_msg_hg_table[i].code == code){
+            return esp_err_msg_hg_table[i].msg;
+        }
+    }
+
+    return "one_wire_hg_sensor.h: Not a valid error code!";
+}
+
+/* --------------------------------------------------------- */
+
+esp_err_t hg_read(gpio_num_t port, hg_sensor_t *sensor_data){
     
-    vTaskSuspendAll(); // prevent other tasks
+    int64_t micro_s = 0;
+    uint8_t pos_edge_gpio_humidity;
+    int64_t temp[PACKET_BYTES_QTY*8*2 + 2];
 
+    if(sensor_data == NULL){
+        return ESP_ERR_HG_POINTER_TO_NULL;
+    }
+
+    vTaskSuspendAll(); // prevent other tasks
     // send a high-low-high signal to sensor to send data
     // set low for 1 ms
     gpio_set_level(port,0);
@@ -64,47 +102,58 @@ hg_sensor_t hg_read(gpio_num_t port){
     while(esp_timer_get_time() < micro_s + 40);
     // wait for the sensor low time, until it pulls the bus high
     // pos_edge_gpio_humidity = 0;
-    while(gpio_get_level(port) != 1);
+    micro_s = esp_timer_get_time();
+    while(gpio_get_level(port) != 1){ 
+        if( (esp_timer_get_time() - micro_s) > 200 ){ // no response from sensor 
+            xTaskResumeAll(); // since logging is handled by the rtos, we should give it control back by the rtos task to act, by resuming all tasks
+            return ESP_ERR_HG_TIMEOUT;
+        }
+
+        // if( (esp_timer_get_time() - micro_s) > 200 ){ xTaskResumeAll(); return ESP_ERR_HG_TIMEOUT;}
+    }
 
     for(int i = 0; i < (PACKET_BYTES_QTY*8*2 + 2); i += 2){
-        while(gpio_get_level(port) != 0);
+        micro_s = esp_timer_get_time();
+        while(gpio_get_level(port) != 0){ if( (esp_timer_get_time() - micro_s) > 200 ){ xTaskResumeAll(); return ESP_ERR_HG_TIMEOUT;}}
         temp[i + 0] = esp_timer_get_time();
-        while(gpio_get_level(port) != 1);
+        
+        micro_s = esp_timer_get_time();
+        while(gpio_get_level(port) != 1){ if( (esp_timer_get_time() - micro_s) > 200 ){ xTaskResumeAll(); return ESP_ERR_HG_TIMEOUT;}}
         temp[i + 1] = esp_timer_get_time();
     }
 
     xTaskResumeAll();
 
     for(int i = 0; i < PACKET_BYTES_QTY; i++){
-        sensor_data.raw.byte[PACKET_BYTES_QTY-1-i] = 0;
+        sensor_data->raw.byte[PACKET_BYTES_QTY-1-i] = 0;
 
         for(int j = 0; j < 8; j++){
             int bit = (temp[2*(j+i*8) + 2] - temp[2*(j+i*8) + 1]) > ( temp[2*(j+i*8) + 1] - temp[2*(j+i*8) + 0]);
-            sensor_data.raw.byte[PACKET_BYTES_QTY-1-i] |= (bit<<(8-1-j)); 
+            sensor_data->raw.byte[PACKET_BYTES_QTY-1-i] |= (bit<<(8-1-j)); 
         }
     }
-
-    // ESP_LOGW("Humidity sensor", "Sensor raw: 0x%02X%02X%02X%02X%02X - Sizeof(hg_info_t) = [%u]", sensor_data.byte[4], sensor_data.byte[3], sensor_data.byte[2], sensor_data.byte[1], sensor_data.byte[0], sizeof(hg_info_t));
 
     //calculate checksum
     uint16_t checksum = 0;
     for(uint8_t i = PACKET_BYTES_QTY-1; i > 0; i--){
-        checksum += sensor_data.raw.byte[i];
+        checksum += sensor_data->raw.byte[i];
     }
 
     //errors
-    if((checksum & 0xFF) != sensor_data.raw.checksum){
-        ESP_LOGW("Humidity sensor", "Humidity sensor checksum failed! [%04X] - [%02X]", checksum, sensor_data.raw.checksum);    
+    if((checksum & 0xFF) != sensor_data->raw.checksum){
+        return ESP_ERR_HG_CHECKSUM_FAILED;
+        // ESP_LOGW("Humidity sensor", "Humidity sensor checksum failed! [%04X] - [%02X]", checksum, sensor_data->raw.checksum);    
     }
 
-    sensor_data.humidity = sensor_data.raw.humidity / 10.0;
+    sensor_data->humidity = sensor_data->raw.humidity / 10.0;
 
-    if(sensor_data.raw.temperature & 0x8000) // if last bit is one then is a negative temperature
-        sensor_data.temperature = -(sensor_data.raw.temperature & (~0x8000)) / 10.0;
+    if(sensor_data->raw.temperature & 0x8000) // if last bit is one then is a negative temperature
+        sensor_data->temperature = -(sensor_data->raw.temperature & (~0x8000)) / 10.0;
     else
-        sensor_data.temperature = sensor_data.raw.temperature / 10.0;
+        sensor_data->temperature = sensor_data->raw.temperature / 10.0;
 
-    return sensor_data; 
+
+    return ESP_ERR_HG_OK;
 }
 
 #endif

@@ -25,6 +25,8 @@ static void IRAM_ATTR isr_hall_sensor(void *arg) {
 void app_main(void) {
     
     static httpd_handle_t server = NULL;
+    weather_station_data_t objeto; 
+    hg_sensor_t humidity_info;
 
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
@@ -57,13 +59,23 @@ void app_main(void) {
         float temp_voltage = (temp_raw*3.3/4096);
         float temp         = (temp_voltage*100.0);
         
-        //hg_sensor_t humidity_info = hg_read(CONFIG_GPIO_HUMIDITY);
+        esp_err_t hg_code = hg_read(CONFIG_GPIO_HUMIDITY, &humidity_info);
+        // if error has occured
+        if(hg_code < 0){
+            ESP_LOGE("main.c", "%s", esp_err_hg_to_name(hg_code));
+        }
+        else{
+            ESP_LOGI("main.c", "%s", esp_err_hg_to_name(hg_code));
+            ESP_LOGI("main.c", "Hall: [%i] - Temperatura: [%f] - Humidade HG: [%f] - Temperatura HG: [%f] ", gpio_get_level(CONFIG_GPIO_HALL_SENSOR), temp, humidity_info.humidity, humidity_info.temperature);
+            // objeto.humidity =  humidity_info.humidity;
+            // objeto.temp = temp;
+        }
 
-        uint16_t solar_incidence_raw = adc1_get_raw(ADC1_CHANNEL_7);
-        float temp_solar_voltage     = (((solar_incidence_raw*3.3)/4096)*11);
+        // uint16_t solar_incidence_raw = adc1_get_raw(ADC1_CHANNEL_7);
+        // float temp_solar_voltage     = (((solar_incidence_raw*3.3)/4096)*11);
 
         // ESP_LOGI(TAG, "Hall: [%i] - Temperatura: [%f] - Humidade HG: [%f] - Temperatura HG: [%f] - Solar Incidence: [%f] ", gpio_get_level(CONFIG_GPIO_HALL_SENSOR), temp, humidity_info.humidity, humidity_info.temperature, temp_solar_voltage);
-        ESP_LOGI(TAG, "Solar Incidence: [%f] ", temp_solar_voltage);
+        // ESP_LOGI(TAG, "Solar Incidence: [%f] ", temp_solar_voltage);
 
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
