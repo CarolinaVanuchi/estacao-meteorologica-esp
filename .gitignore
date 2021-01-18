@@ -3,6 +3,3 @@ build/
 .vscode/
 
 *.http
-
-sdkconfig
-sdkconfig.old

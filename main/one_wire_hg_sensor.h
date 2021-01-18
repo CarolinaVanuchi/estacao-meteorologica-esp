@@ -17,7 +17,14 @@
 /* --------------------------------------------------------- */
 
 #define PACKET_BYTES_QTY 5 
-#define HG_SENSOR_COOLDOWN_TIME_US 500000 
+
+// if kconfig option is defined then its value is used, otherwise has a 500 ms cooldown
+#ifdef CONFIG_HUMIDITY_READ_COOLDOWN_MS
+    #define HG_SENSOR_COOLDOWN_TIME_US CONFIG_HUMIDITY_READ_COOLDOWN_MS*1000
+#else
+    #define HG_SENSOR_COOLDOWN_TIME_US 500000 
+#endif 
+
 
 #pragma pack(push,1)
 typedef union{
@@ -123,11 +130,11 @@ esp_err_t hg_read(gpio_num_t port, hg_sensor_t *sensor_data){
     // grab times for each transition
     for(int i = 0; i < (PACKET_BYTES_QTY*8*2 + 2); i += 2){
         // there are 5 incoming bytes, therefore a maximum of , 40 high bits that account for 50+70 us each, 
-        // 120us*40bits = 4800 us to be wait for all the bits to come 
-        while(gpio_get_level(port) != 0){ if( (esp_timer_get_time() - micro_s) > 5000 ){ xTaskResumeAll(); return ESP_ERR_HG_FAIL_TO_READ_RESPONSE_BITS;}}
+        // 120us*40bits = 4800 us to be waited for all the bits to come ~ 7000 us
+        while(gpio_get_level(port) != 0){ if( (esp_timer_get_time() - micro_s) > 7000 ){ xTaskResumeAll(); return ESP_ERR_HG_FAIL_TO_READ_RESPONSE_BITS;}}
         temp[i + 0] = esp_timer_get_time();
         
-        while(gpio_get_level(port) != 1){ if( (esp_timer_get_time() - micro_s) > 5000 ){ xTaskResumeAll(); return ESP_ERR_HG_FAIL_TO_READ_RESPONSE_BITS;}}
+        while(gpio_get_level(port) != 1){ if( (esp_timer_get_time() - micro_s) > 7000 ){ xTaskResumeAll(); return ESP_ERR_HG_FAIL_TO_READ_RESPONSE_BITS;}}
         temp[i + 1] = esp_timer_get_time();
     }
 
