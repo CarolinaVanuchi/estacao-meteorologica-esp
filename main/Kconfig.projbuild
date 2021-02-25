@@ -14,7 +14,7 @@ menu "HTTPS Server Login/password"
         
 endmenu
 
-menu "Sensors GPIO"
+menu "Sensors"
 
     config GPIO_HALL_SENSOR
         int "Hall sensor digital input"
@@ -43,10 +43,23 @@ menu "Sensors GPIO"
         default 35
         help
             Photovoltaic plate sensor input.
+
+    config HUMIDITY_READ_COOLDOWN_MS
+        int "AM2302 digital humidity and temperature sensor cooldown time between each reading in micro seconds (ms)"
+        range 1 10000000
+        default 500
+        help
+            AM2302 digital humidity and temperature sensor cooldown time between each reading in micro seconds (ms).
+
+    config RAIN_GAUGE_RATIO_COUNTS_PER_MM
+        int "Rain gauge ratio of counts to mm of precipitation (x1000)"
+        default 1000
+        help
+            Rain gauge ratio between measured counts and actual precipitation. Given by times (x1000).
         
 endmenu
 
-menu "Conexao Wifi"
+menu "Wifi network"
     config WIFI_SSID
         string "Wifi SSID"
         default "galito"
