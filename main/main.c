@@ -17,6 +17,7 @@
 #include "rain_gauge.h"
 #include "utils_https.h"
 #include "utils_connect.h"
+#include "queue.h"
 
 void app_main(void) {
     
@@ -62,34 +63,42 @@ void app_main(void) {
     int64_t last_call = esp_timer_get_time();                       // get time for calling humidity sensor
     esp_err_t hg_code = ESP_ERR_HG_OK;                              // ret code from humidity sensor reading
 
+    queue_double_t *temp_queue = queue_new(30);
+    queue_double_t *solar_queue = queue_new(20);
+
     while(1){
 
         /* Temperature */
         uint16_t temp_raw  = adc1_get_raw(ADC1_CHANNEL_0);
         float temp_voltage = (temp_raw*3.3/4096);
         float temp         = (temp_voltage*100.0);
-        objeto.temp        = temp;
-        ESP_LOGI(__FILE__, "Temperatura: [%f]", temp);
+        queue_add(temp_queue, (double)temp);
+        objeto.temp        = queue_average(temp_queue);
+        // ESP_LOGI(__FILE__, "Temperatura: [%f]", temp);
         
         /* Humidity */  
         if(esp_timer_get_time() - last_call > HG_SENSOR_COOLDOWN_TIME_US){
             hg_code = hg_read(CONFIG_GPIO_HUMIDITY, &humidity_info);
+
+            // if error has occured
+            if(hg_code < 0){
+                ESP_LOGE(__FILE__, "%s", esp_err_hg_to_name(hg_code));
+                objeto.humidity = NaN_double.nan;
+            }
+            else{
+                // ESP_LOGI(__FILE__, "Humidade: [%f]", humidity_info.humidity);
+                objeto.humidity =  humidity_info.humidity;
+            }
+            
             last_call = esp_timer_get_time();
-        }
-        // if error has occured
-        if(hg_code < 0){
-            ESP_LOGE(__FILE__, "%s", esp_err_hg_to_name(hg_code));
-            objeto.humidity = NaN_double.nan;
-        }
-        else{
-            ESP_LOGI(__FILE__, "Humidade: [%f]", humidity_info.humidity);
-            objeto.humidity =  humidity_info.humidity;
         }
 
         /* Solar incidence */
         objeto.incidency_sun = NaN_double.nan;
-        // uint16_t solar_incidence_raw = adc1_get_raw(ADC1_CHANNEL_7);
-        // float temp_solar_voltage     = (((solar_incidence_raw*3.3)/4096)*11);
+        uint16_t solar_incidence_raw = adc1_get_raw(ADC1_CHANNEL_7);
+        double solar = (((solar_incidence_raw*3.3)/4096)*11);
+        queue_add(solar_queue, solar);
+        objeto.incidency_sun = queue_average(solar_queue);
 
         /* Rain gauge */
         hall_sensor = gpio_get_level(CONFIG_GPIO_HALL_SENSOR);
@@ -99,10 +108,9 @@ void app_main(void) {
             objeto.precipitation = rain_data.precipitation_inst;
         }
         hall_sensor_tmp = hall_sensor;
-        ESP_LOGI(__FILE__, "Hall_Counts: [%u] - Precipitation_mm: [%f] - Ratio: [%f]", rain_data.counts, rain_data.precipitation_inst, rain_data.ratio_counts_per_mm);
+        // ESP_LOGI(__FILE__, "Hall_Counts: [%u] - Precipitation_mm: [%f] - Ratio: [%f]", rain_data.counts, rain_data.precipitation_inst, rain_data.ratio_counts_per_mm);
 
-        // ESP_LOGI(TAG, "Hall: [%i] - Temperatura: [%f] - Humidade HG: [%f] - Temperatura HG: [%f] - Solar Incidence: [%f] ", gpio_get_level(CONFIG_GPIO_HALL_SENSOR), temp, humidity_info.humidity, humidity_info.temperature, temp_solar_voltage);
-
-        // vTaskDelay(200 / portTICK_PERIOD_MS);
+        // Main log 
+        ESP_LOGI(__FILE__, "HALL [%i] - Precipitation: [%f] - Temperature: [%f] - Humidity: [%f] - Solar Incidence: [%f]\n", hall_sensor, objeto.precipitation, objeto.temp, objeto.humidity, objeto.incidency_sun);
     }
 }
