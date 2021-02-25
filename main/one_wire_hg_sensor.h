@@ -20,7 +20,7 @@
 
 // if kconfig option is defined then its value is used, otherwise has a 500 ms cooldown
 #ifdef CONFIG_HUMIDITY_READ_COOLDOWN_MS
-    #define HG_SENSOR_COOLDOWN_TIME_US CONFIG_HUMIDITY_READ_COOLDOWN_MS*1000
+    #define HG_SENSOR_COOLDOWN_TIME_US (CONFIG_HUMIDITY_READ_COOLDOWN_MS*1000)
 #else
     #define HG_SENSOR_COOLDOWN_TIME_US 500000 
 #endif 
