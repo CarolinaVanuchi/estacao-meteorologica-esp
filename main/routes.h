@@ -5,6 +5,7 @@
 #include "model.h"
 #include <cJSON.h>
 #include "embbeded_files.h"
+#include "rain_gauge.h"
 
 const char *TAG_ROUTE = "routes.h"; 
 
@@ -15,6 +16,8 @@ static esp_err_t httpd_uri_api_weather_station_handler(httpd_req_t *req) {
     char *buffer = weather_station_to_json(temp);
     httpd_resp_sendstr(req, buffer);
     free(buffer);
+    global_rain_data->counts = 0;
+    global_internal_weather_station_data_pointer->precipitation = 0;
     return ESP_OK;
 }
 

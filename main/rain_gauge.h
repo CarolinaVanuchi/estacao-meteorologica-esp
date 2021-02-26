@@ -19,4 +19,6 @@ typedef struct{
     float precipitation_mm_min;  
 }rain_data_t;
 
+rain_data_t *global_rain_data = NULL;;
+
 #endif

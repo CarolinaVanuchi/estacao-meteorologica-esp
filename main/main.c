@@ -54,6 +54,10 @@ void app_main(void) {
     gpio_install_isr_service(0);
 
     set_weather_station(&objeto);                                   // set main weather object
+    objeto.humidity = 0.0;
+    objeto.incidency_sun = 0.0;
+    objeto.precipitation = 0.0;
+    objeto.temp = 0.0;
                                                                                     
     rain_data.ratio_counts_per_mm = RAIN_GAUGE_RATIO_COUNTS_PER_MM; // rain gauge initialization information
     rain_data.counts = 0;
@@ -65,6 +69,8 @@ void app_main(void) {
 
     queue_double_t *temp_queue = queue_new(30);
     queue_double_t *solar_queue = queue_new(20);
+
+    global_rain_data = &rain_data;
 
     while(1){
 
